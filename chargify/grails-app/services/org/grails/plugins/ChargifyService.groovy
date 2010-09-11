@@ -26,7 +26,8 @@ class ChargifyService {
         return conn
     }
 
-    public boolean createCustomerInChargify(Customer customer) {
+    public Customer createCustomerInChargify(Customer customer) {
+        Customer retCustomer = null
         if (customer.isValid()) {
             HttpURLConnection conn = getChargifyConnection(customersUrl, "POST")
             String customerRequestXml = customer.getXml()
@@ -38,16 +39,16 @@ class ChargifyService {
             int responseCode = conn.getResponseCode()
             log.debug("response code : ${responseCode}")
 
-            //TODO: read response (xml) and create customer bean - and return it
-            conn.disconnect()
-           
             if (responseCode == CHARGIFY_RESPONSE_CODE_OK) {
-                return true
+                retCustomer = Customer.getCustomerFromXml(conn.content?.text)
             } else {
                 log.error("Customer not created. ResponseCode: ${responseCode}: ResponseMessage: ${conn.responseMessage}")
             }
+            conn.disconnect()
+        }else{
+            log.error("INVALID Customer information (REQUIRED Fields: firstName, lastName, email)")
         }
-        return false
+        return retCustomer
     }
 
     List<Product> getProductsFromChargify() {
