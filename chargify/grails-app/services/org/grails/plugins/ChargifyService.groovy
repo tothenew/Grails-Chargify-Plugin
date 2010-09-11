@@ -9,7 +9,7 @@ class ChargifyService {
 
     public static final String customersUrl = "https://${CH.config.chargify.subdomain}.chargify.com/customers.xml"
     public static final String subscriptionsUrl = "https://${CH.config.chargify.subdomain}.chargify.com/subscriptions.xml"
-//    String transactionsUrl = "https://${ CH.config.chargify.subdomain}.chargify.com/customers.xml"
+    String transactionsUrl = "https://${ CH.config.chargify.subdomain}.chargify.com/subscriptions"
     public static final String productsUrl = "https://${CH.config.chargify.subdomain}.chargify.com/products.xml"
     public static final String authKey = CH.config.chargify.authkey + CH.config.chargify.authkeySuffix
 
@@ -62,6 +62,24 @@ class ChargifyService {
         }
         conn.disconnect()
         return products
+    }
+
+    public List<Transaction> getChargifyTransactions(String subscriptionId) {
+        List<Transaction> transactions = []
+        if (subscriptionId) {
+            String urlStr = "${transactionsUrl}/${subscriptionId}/transactions.json"//"https://makeitrain.chargify.com/subscriptions/${subscriptionId}/transactions.json"
+            HttpURLConnection conn = getChargifyConnection(urlStr, "GET")
+            conn.connect()
+            int responseCode = conn.getResponseCode()
+            log.debug("response code : ${responseCode}")
+            if (responseCode == HTTP_RESPONSE_CODE_OK) {
+              String jsonResponse = conn.content?.text
+              transactions << Transaction.getTransactionsFromJson(jsonResponse)
+              log.debug("getTransactionFromChargify for Subscription id :${subscriptionId} ")
+            }
+            conn.disconnect()
+        }
+        return transactions?.flatten()
     }
     
 }
