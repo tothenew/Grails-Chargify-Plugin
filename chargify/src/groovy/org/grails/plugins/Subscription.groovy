@@ -7,6 +7,7 @@ class Subscription {
     public static final String UPDATE_CREDIT_CARD = 'update_cc'
     public static final String UPDATE_PRODUCT = 'update_product'
     public static final String UNSUBSCRIBE = 'unsubscribe'
+    public static final String SUBSCRIBE_PRODUCT = 'subscribe'
 
     String action
     String id
@@ -103,12 +104,6 @@ class Subscription {
         }
     }
 
-    public static Subscription getTestCCSubscription() {
-        Date date = new Date()
-        int currentYear = date.year + 1900
-        return new Subscription(ccNumber: '1', ccExpiryMonth: '5', ccExpiryYear: currentYear + 2)
-    }
-
     public static Subscription getFromXml(String subsciptionXml) {
         def resp = new XmlParser().parseText(subsciptionXml);
         Subscription subscription = new Subscription()
@@ -153,21 +148,6 @@ class Subscription {
 
     }
 
-    public Date getExpiryDate() {
-        if (ccExpiryMonth && ccExpiryYear) {
-            return Date.parse('yyyy-MM-dd', "${ccExpiryYear}-${ccExpiryMonth}-01")
-        }
-        return null
-    }
-
-    public void setExpiryDate(int month, int year) {
-        ccExpiryMonth = month
-        ccExpiryYear = year
-    }
-
-    public String toString() {
-        return "customer:${ccFirstName} - ref:${customerRef} - productHandle:${productHandle}"
-    }
 
     public boolean isValid() {
         boolean isValid = false

@@ -56,7 +56,7 @@ class ChargifyService {
         HttpURLConnection conn = getChargifyConnection(productsUrl, "GET")
         conn.connect()
         int responseCode = conn.getResponseCode()
-        log.debug("getProductsFromChargify: response code : ${responseCode}")
+        log.debug("Gettings products from chargify : response code : ${responseCode}")
         if (responseCode == HTTP_RESPONSE_CODE_OK) {
             products = Product.getListFromXml(conn.content?.text)
             log.debug("number of products retrieved: ${products.size()}")
@@ -76,7 +76,7 @@ class ChargifyService {
             if (responseCode == HTTP_RESPONSE_CODE_OK) {
               String jsonResponse = conn.content?.text
               transactions << Transaction.getTransactionsFromJson(jsonResponse)
-              log.debug("getTransactionFromChargify for Subscription id :${subscriptionId} ")
+              log.debug("Getting transaction from chargify for Subscription id :${subscriptionId} ")
             }
             conn.disconnect()
         }
@@ -85,6 +85,7 @@ class ChargifyService {
 
     public String createSubscription(Subscription subscription)  {
         String subscriptionId = null
+        
         HttpURLConnection conn = getChargifyConnection(subscriptionsUrl, "POST")
         String subscriptionRequestXml = subscription.getXml()
         def writer = new OutputStreamWriter(conn.outputStream)
@@ -122,7 +123,7 @@ class ChargifyService {
         if (responseCode == HTTP_RESPONSE_CODE_OK) {
             String responseXml = conn.content?.text
             subscription = Subscription.getFromXml(responseXml)
-            log.debug("getSubscriptionByIdFromChargify: subscription: ${subscription}")
+            log.debug("Getting subscription from chargify : subscription: ${subscription}")
         }
         conn.disconnect()
         return subscription
@@ -141,11 +142,11 @@ class ChargifyService {
         conn.connect()
 
         int responseCode = conn.getResponseCode()
-        log.debug("updateSubscription: response code : ${responseCode}")
+        log.debug("Updating credit card information : response code : ${responseCode}")
         if (responseCode == HTTP_RESPONSE_CODE_OK) {
             String responseXml = conn.content?.text
             subscription = Subscription.getFromXml(responseXml)
-            log.debug("updateSubscription: subscription: ${subscription}")
+            log.debug("Updating credit card information: subscription: ${subscription}")
         } else {
             subscription = null
             String responseMessage = conn.getResponseMessage()
@@ -169,11 +170,11 @@ class ChargifyService {
         conn.connect()
 
         int responseCode = conn.getResponseCode()
-        log.debug("cancelSubscription: response code : ${responseCode}")
+        log.debug("Cancel Subscription: response code : ${responseCode}")
         if (responseCode == HTTP_RESPONSE_CODE_OK) {
             String responseXml = conn.content?.text
             subscription = Subscription.getFromXml(responseXml)
-            log.debug("cancelSubscription: subscription: ${subscription}")
+            log.debug("Cancel Subscription: subscription: ${subscription}")
         } else {
             subscription = null
         }
