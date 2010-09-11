@@ -9,7 +9,7 @@ class ChargifyService {
 
     public static final String customersUrl = "https://${CH.config.chargify.subdomain}.chargify.com/customers.xml"
     public static final String subscriptionsUrl = "https://${CH.config.chargify.subdomain}.chargify.com/subscriptions.xml"
-    String transactionsUrl = "https://${ CH.config.chargify.subdomain}.chargify.com/subscriptions"
+    public static final String transactionsUrl = "https://${ CH.config.chargify.subdomain}.chargify.com/subscriptions"
     public static final String productsUrl = "https://${CH.config.chargify.subdomain}.chargify.com/products.xml"
     public static final String authKey = CH.config.chargify.authkey + CH.config.chargify.authkeySuffix
 
@@ -80,6 +80,79 @@ class ChargifyService {
             conn.disconnect()
         }
         return transactions?.flatten()
+    }
+
+    public String createSubscription(Subscription subscription)  {
+        String subscriptionId = null
+        HttpURLConnection conn = getChargifyConnection(subscriptionsUrl, "POST")
+        String subscriptionRequestXml = subscription.getXml()
+        def writer = new OutputStreamWriter(conn.outputStream)
+        writer.write(subscriptionRequestXml)
+        writer.flush()
+        writer.close()
+        conn.connect()
+
+        int responseCode = conn.getResponseCode()
+        log.debug("response code : ${responseCode}")
+
+        if (responseCode == CHARGIFY_RESPONSE_CODE_OK) {
+            String responseXml = conn.content?.text
+            def resp = new XmlParser().parseText(responseXml)
+            subscriptionId = resp.id.text()
+            log.debug("subsciptionId: ${subscriptionId}")
+        } else {
+            log.error("Subscription Failure. ResponseCode: ${responseCode}: ResponseMessage: ${conn.responseMessage}")
+            subscriptionId = null
+            conn.disconnect()
+            // this response code should be 422 - unprocessable information.
+        }
+        conn?.disconnect()
+        return subscriptionId
+    }
+
+    public Subscription getSubscriptionByIdFromChargify(String subscriptionId) {
+        Subscription subscription = null
+        String urlStr = subscriptionsUrl
+        urlStr = urlStr.replaceFirst(".xml", "/${subscriptionId}.xml")
+        HttpURLConnection conn = getChargifyConnection(urlStr, "GET")
+        conn.connect()
+        int responseCode = conn.getResponseCode()
+        log.debug("response code : ${responseCode}")
+        if (responseCode == HTTP_RESPONSE_CODE_OK) {
+            String responseXml = conn.content?.text
+            subscription = Subscription.getFromXml(responseXml)
+            log.debug("getSubscriptionByIdFromChargify: subscription: ${subscription}")
+        }
+        conn.disconnect()
+        return subscription
+    }
+
+    public Subscription updateCreditCard(Subscription subscription) {
+        String urlStr = subscriptionsUrl
+        urlStr = urlStr.replaceFirst(".xml", "/${subscription.id}.xml")
+        HttpURLConnection conn = getChargifyConnection(urlStr, "PUT")
+        String subscriptionRequestXml = subscription.getXml()
+        log.debug "xml request: ${subscriptionRequestXml}"
+        def writer = new OutputStreamWriter(conn.outputStream)
+        writer.write(subscriptionRequestXml)
+        writer.flush()
+        writer.close()
+        conn.connect()
+
+        int responseCode = conn.getResponseCode()
+        log.debug("updateSubscription: response code : ${responseCode}")
+        if (responseCode == HTTP_RESPONSE_CODE_OK) {
+            String responseXml = conn.content?.text
+            subscription = Subscription.getFromXml(responseXml)
+            log.debug("updateSubscription: subscription: ${subscription}")
+        } else {
+            subscription = null
+            String responseMessage = conn.getResponseMessage()
+            // this response code should be 422 - unprocessable information.
+            conn.disconnect()
+        }
+        conn.disconnect()
+        return subscription
     }
     
 }
