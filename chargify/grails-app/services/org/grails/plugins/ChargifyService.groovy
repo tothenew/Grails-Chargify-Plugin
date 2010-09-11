@@ -155,5 +155,29 @@ class ChargifyService {
         conn.disconnect()
         return subscription
     }
-    
+
+    public Subscription cancelSubscription(String subscriptionId, String message) {
+        String urlStr = subscriptionsUrl
+        urlStr = urlStr.replaceFirst(".xml", "/${subscriptionId}.xml")
+        HttpURLConnection conn = getChargifyConnection(urlStr, "DELETE")
+        Subscription subscription = new Subscription(action: Subscription.UNSUBSCRIBE, customMessage: message)
+        String subscriptionRequestXml = subscription.getXml()
+        def writer = new OutputStreamWriter(conn.outputStream)
+        writer.write(subscriptionRequestXml)
+        writer.flush()
+        writer.close()
+        conn.connect()
+
+        int responseCode = conn.getResponseCode()
+        log.debug("cancelSubscription: response code : ${responseCode}")
+        if (responseCode == HTTP_RESPONSE_CODE_OK) {
+            String responseXml = conn.content?.text
+            subscription = Subscription.getFromXml(responseXml)
+            log.debug("cancelSubscription: subscription: ${subscription}")
+        } else {
+            subscription = null
+        }
+        conn.disconnect()
+        return subscription
+    }
 }
