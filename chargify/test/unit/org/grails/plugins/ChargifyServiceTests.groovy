@@ -5,62 +5,27 @@ import grails.test.*
 class ChargifyServiceTests extends GrailsUnitTestCase {
     ChargifyService chargifyService;
 
+    Customer customer;
+    Subscription subscription;
+    String subscriptionId
+    String planProductHandle = "paid-plan"
+
     protected void setUp() {
         super.setUp()
+        mockConfig('''
+              chargify.subdomain=" "
+              chargify.authkey=" "
+              chargify.authkeySuffix=":x"
+        ''')
         mockLogging(ChargifyService)
         chargifyService = new ChargifyService();
-        chargifyService.with {
-            authKey = 'fp2YDBIeiEHMeGz48Mo3:x'
-            customersUrl = 'https://chargify-plugin.chargify.com/customers.xml'
-            subscriptionsUrl = 'https://chargify-plugin.chargify.com/subscriptions.xml'
-            productsUrl = 'https://chargify-plugin.chargify.com/products.xml'
-            transactionsUrl = "https://chargify-plugin.chargify.com/subscriptions"
-        }
-    }
 
-    void testUpgradeSubscription() {
-        Customer customer = getDummyCustomer();
-        chargifyService.createCustomerInChargify(customer)
-        Subscription existingSubscription = new Subscription()
-        Date date = new Date()
-        int currentYear = date.year + 1900
-        existingSubscription.with {
-            ccNumber = '1'
-            ccExpiryMonth = '5'
-            ccExpiryYear = currentYear + 2
-            customerRef = customer.referenceId
-            productHandle = "make-it-rain-basic-plan"
-            zipCode = "201301"
-        }
-        existingSubscription.id = chargifyService.createSubscription(existingSubscription)
-        assertNotNull("Subscription could not be created in Chargify", existingSubscription.id)
-
-        existingSubscription = chargifyService.getSubscriptionByIdFromChargify(existingSubscription.id)
-
-        assertEquals("Subscription not created or fetched property from Chargify.", "make-it-rain-basic-plan", existingSubscription.productHandle)
-        assertNotNull(existingSubscription.id)
-        assertEquals(customer.referenceId, existingSubscription.customerRef)
-
-        // Now, lets upgrade the subscription, the subscription id should change
-        Subscription newSubscription = new Subscription();
-        newSubscription.with {
-            ccNumber = '1'
-            ccExpiryMonth = '5'
-            ccExpiryYear = currentYear + 2
-            customerRef = customer.referenceId
-            productHandle = "make-it-rain-plus-plan"
-            zipCode = "201301"
-        }
-        String newSubscriptionId = chargifyService.upgradeSubscription(newSubscription, existingSubscription.id)
-        newSubscription = chargifyService.getSubscriptionByIdFromChargify(newSubscriptionId)
-        assertTrue(newSubscription.id != existingSubscription)
-        assertEquals(customer.referenceId, newSubscription.customerRef)
-        // assert that the old subscription is no longer active in Chargify
-        existingSubscription = chargifyService.getSubscriptionByIdFromChargify(existingSubscription.id)
-        assertEquals("canceled", existingSubscription.status)
-        // assert that the new subscription is active in Chargify
-        assertTrue(newSubscription.status == "active")
-        assertTrue(newSubscription.productHandle == "make-it-rain-plus-plan")
+        customer=getDummyCustomer();
+        customer=chargifyService.createCustomerInChargify(customer);
+        subscription=getDummySubscription();
+        println "==subscription====="+subscription
+        subscriptionId=chargifyService.createSubscription(subscription);
+       println "*********subscriptionId******"+subscriptionId
     }
 
     protected void tearDown() {
@@ -68,22 +33,48 @@ class ChargifyServiceTests extends GrailsUnitTestCase {
     }
 
     void testCreateCustomerInChargify() {
-        Customer customer = getDummyCustomer();
-        int responseCode = chargifyService.createCustomerInChargify(customer);
-        assertEquals("Response Code should be 201", ChargifyService.CHARGIFY_RESPONSE_CODE_OK, responseCode)
+        assertNotNull("Customer could not be created in Chargify", customer)
     }
 
-    void testCreateCustomerInChargify_WITHOUT_LAST_NAME() {
-        Customer customer = getDummyCustomer();
-        customer.lastName = ""
-        customer.firstName = ""
-        int responseCode = chargifyService.createCustomerInChargify(customer);
-        assertEquals("Response Code should be 201", ChargifyService.CHARGIFY_RESPONSE_CODE_OK, responseCode)
+    void testCreateSubscription(){
+        assertNotNull("Subscription could not be created in Chargify", subscriptionId)
     }
+
+    void testGetSubscriptionByIdFromChargify(){
+        Subscription existingSubscription;
+        //Get Existing Subscription
+        existingSubscription = chargifyService.getSubscriptionByIdFromChargify(subscriptionId)
+        assertEquals("Subscription not created or fetched property from Chargify.",planProductHandle, existingSubscription.productHandle)
+        assertNotNull(existingSubscription.id)
+        assertEquals(customer.referenceId, existingSubscription.customerRef)
+    }
+
+    void testGetChargifyTransactions(){
+        List<Transaction> transactions=chargifyService.getChargifyTransactions(subscriptionId)
+        assertNotNull("Unable to get transactions",transactions);
+        transactions.each{
+            assertEquals("Transaction not found for specified subscripiton",subscriptionId,it.subscriptionId)
+        }
+    }
+
+//    void testUpdateCreditCard(){
+//        String zipcode = "12238"
+//        subscription.ccFirstName = zipcode
+//        Subscription updatedSubscription=chargifyService.updateCreditCard(subscription);
+//        assertNotNull("Credit Card could not be updated in Chargify", updatedSubscription);
+//        assertEquals("Subscription not updated or fetch property from chargify",zipcode,updatedSubscription.ccFirstName)
+//    }
+
+    void testCancelSubscription(){
+        Subscription cancelledSubscription=chargifyService.cancelSubscription(subscriptionId,"Cancel my subscription");
+        assertEquals("Unable to cancel subscription in Chargify", "canceled",cancelledSubscription.status);
+    }
+
+
 
     private Customer getDummyCustomer() {
-        String randomId = UUID.randomUUID().toString()
-        Customer customer = new Customer();
+        String randomId = UUID.randomUUID().toString();
+        Customer customer=new Customer();
         customer.firstName = "UnitTestFN"
         customer.lastName = "UnitTestLN"
         customer.emailAddress = "${randomId}@gmail.com"
@@ -92,21 +83,19 @@ class ChargifyServiceTests extends GrailsUnitTestCase {
         return customer
     }
 
-    void testCreateAndUpdateSubscription() {
-        Customer customer = getDummyCustomer();
-        chargifyService.createCustomerInChargify(customer)
-        Subscription subscription = new Subscription()
-        subscription.customerRef = customer.referenceId
-        subscription.productHandle = "make-it-rain-pay-as-you-go"
-        subscription.id = chargifyService.createSubscription(subscription)
-        assertNotNull("Subscription could not be created in Chargify", subscription.id)
-        Subscription subscriptionFromChargify = chargifyService.getSubscriptionByIdFromChargify(subscription.id)
-        assertEquals("Subscription not created or fetched property from Chargify.", "make-it-rain-pay-as-you-go", subscriptionFromChargify.productHandle)
 
-        // Now, lets update the subscription, the subscription id should remain un-changed.
-        subscription.productHandle = "make-it-rain-basic-plan"
-        chargifyService.downgradeSubscriptionOrUpdateCreditCard(subscription)
-        subscriptionFromChargify = chargifyService.getSubscriptionByIdFromChargify(subscription.id)
-        assertEquals("Subscription not created or fetched property from Chargify.", "make-it-rain-basic-plan", subscriptionFromChargify.productHandle)
+    private Subscription getDummySubscription(){
+        Subscription subscription = new Subscription()
+        Date date = new Date()
+        int currentYear = date.year + 1900
+        subscription.with {
+            ccNumber = '1'
+            ccExpiryMonth = '5'
+            ccExpiryYear = currentYear + 2
+            customerRef = customer.referenceId
+            productHandle = planProductHandle
+            zipCode = "201301"
+        }
+        return subscription;
     }
 }

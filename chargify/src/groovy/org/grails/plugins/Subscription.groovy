@@ -36,6 +36,7 @@ class Subscription {
     String ccType // <credit_card><card_type>bogus</card_type></credit_card>
     String ccFirstName  // <credit_card><first_name>Salil</first_name></credit_card>
     String ccLastName   // <credit_card><last_name>Kalia</last_name></credit_card>
+    String zipCode
 
     /*
     <billing_address nil="true"></billing_address>
@@ -68,6 +69,7 @@ class Subscription {
                     full_number(ccNumber)
                     expiration_month(ccExpiryMonth)
                     expiration_year(ccExpiryYear)
+                    billing_zip(zipCode)
                     if (ccFirstName && ccLastName) {
                         first_name(ccFirstName)
                         last_name(ccLastName)
@@ -84,6 +86,7 @@ class Subscription {
                 full_number(ccNumber)
                 expiration_month(ccExpiryMonth)
                 expiration_year(ccExpiryYear)
+                billing_zip(zipCode)
                 if (ccFirstName && ccLastName) {
                     first_name(ccFirstName)
                     last_name(ccLastName)
@@ -140,6 +143,7 @@ class Subscription {
         subscription.ccType = resp.credit_card.card_type.text()
         subscription.ccFirstName = resp.credit_card.first_name.text()
         subscription.ccLastName = resp.credit_card.last_name.text()
+        subscription.zipCode = resp.credit_card.billing_zip.text()
 
         // customer info
         subscription.customerRef = resp.customer.reference.text()
@@ -154,11 +158,11 @@ class Subscription {
         if (action == UPDATE_PRODUCT) {
             isValid = (productHandle != null)
         } else if (action == UPDATE_CREDIT_CARD) {
-            isValid = (ccFirstName && ccLastName && ccNumber && ccExpiryMonth && ccExpiryYear)
+            isValid = (ccFirstName && ccLastName && ccNumber && ccExpiryMonth && ccExpiryYear && zipCode)
         } else if (action == UNSUBSCRIBE) {
             isValid = (customMessage != null)
         } else {
-            isValid = (customerRef && productHandle && ccFirstName && ccLastName && ccNumber && ccExpiryMonth && ccExpiryYear)
+            isValid = (customerRef && productHandle && ccFirstName && ccLastName && ccNumber && ccExpiryMonth && ccExpiryYear && zipCode)
         }
         return isValid
     }
