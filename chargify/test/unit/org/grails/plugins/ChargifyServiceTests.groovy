@@ -23,9 +23,7 @@ class ChargifyServiceTests extends GrailsUnitTestCase {
         customer=getDummyCustomer();
         customer=chargifyService.createCustomerInChargify(customer);
         subscription=getDummySubscription();
-        println "==subscription====="+subscription
         subscriptionId=chargifyService.createSubscription(subscription);
-       println "*********subscriptionId******"+subscriptionId
     }
 
     protected void tearDown() {
@@ -57,19 +55,19 @@ class ChargifyServiceTests extends GrailsUnitTestCase {
         }
     }
 
-//    void testUpdateCreditCard(){
-//        String zipcode = "12238"
-//        subscription.ccFirstName = zipcode
-//        Subscription updatedSubscription=chargifyService.updateCreditCard(subscription);
-//        assertNotNull("Credit Card could not be updated in Chargify", updatedSubscription);
-//        assertEquals("Subscription not updated or fetch property from chargify",zipcode,updatedSubscription.ccFirstName)
-//    }
+    void testUpdateCreditCard(){
+        String zipcode="12238";
+        subscription.id=subscriptionId
+        subscription.zipCode = zipcode;
+        Subscription updatedSubscription=chargifyService.updateCreditCard(subscription);
+        assertNotNull("Credit Card could not be updated in Chargify",updatedSubscription);
+        assertEquals("Subscription not updated or fetch property from chargify", zipcode ,updatedSubscription.zipCode)
+    }
 
     void testCancelSubscription(){
         Subscription cancelledSubscription=chargifyService.cancelSubscription(subscriptionId,"Cancel my subscription");
         assertEquals("Unable to cancel subscription in Chargify", "canceled",cancelledSubscription.status);
     }
-
 
 
     private Customer getDummyCustomer() {

@@ -15,7 +15,7 @@ class ChargifyService {
 
     boolean transactional = false
 
-       private HttpURLConnection getChargifyConnection(String urlStr, String methodType) {
+    private HttpURLConnection getChargifyConnection(String urlStr, String methodType) {
         URL url = new URL(urlStr)
         HttpURLConnection conn = url.openConnection()
         String encoded = new sun.misc.BASE64Encoder().encode((authKey)?.getBytes());
@@ -143,6 +143,7 @@ class ChargifyService {
 
         int responseCode = conn.getResponseCode()
         log.debug("Updating credit card information : response code : ${responseCode}")
+        println responseCode
         if (responseCode == HTTP_RESPONSE_CODE_OK) {
             String responseXml = conn.content?.text
             subscription = Subscription.getFromXml(responseXml)
