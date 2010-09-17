@@ -143,7 +143,6 @@ class ChargifyService {
 
         int responseCode = conn.getResponseCode()
         log.debug("Updating credit card information : response code : ${responseCode}")
-        println responseCode
         if (responseCode == HTTP_RESPONSE_CODE_OK) {
             String responseXml = conn.content?.text
             subscription = Subscription.getFromXml(responseXml)
