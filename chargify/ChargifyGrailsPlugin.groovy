@@ -11,15 +11,18 @@ class ChargifyGrailsPlugin {
     ]
 
     // TODO Fill in these fields
-    def author = "Your name"
-    def authorEmail = ""
-    def title = "Plugin summary/headline"
+    def author = "Salil Kalia"
+    def authorEmail = "salil@intelligrape.com, anshul@intelligrape.com"
+    def title = "Grails Chargify Plugin"
     def description = '''\\
-Brief description of the plugin.
+The plugin is created using grails 1.3.4 and provide your application the simplified intermediate service
+to integrate the use of the web-services provided by the chargify that manages the billing for your
+subscriptions-based business into your application.
+For more details please check out the documentation - http://github.com/IntelliGrape/Grails-Chargify-Plugin/wiki
 '''
 
     // URL to the plugin's documentation
-    def documentation = "http://grails.org/plugin/chargify"
+    def documentation = "http://github.com/IntelliGrape/Grails-Chargify-Plugin/wiki"
 
     def doWithWebDescriptor = { xml ->
         // TODO Implement additions to web.xml (optional), this event occurs before 
