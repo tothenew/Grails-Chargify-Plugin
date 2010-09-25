@@ -12,6 +12,10 @@ class ChargifyService {
     public static final String transactionsUrl = "https://${ CH.config.chargify.subdomain}.chargify.com/subscriptions"
     public static final String productsUrl = "https://${CH.config.chargify.subdomain}.chargify.com/products.xml"
     public static final String authKey = CH.config.chargify.authkey + CH.config.chargify.authkeySuffix
+    public static final String POST = "POST"
+    public static final String GET = "GET"
+    public static final String PUT = "PUT"
+    public static final String DELETE = "DELETE"
 
     boolean transactional = false
 
@@ -26,10 +30,24 @@ class ChargifyService {
         return conn
     }
 
+    List<Product> getProductsFromChargify() {
+        List<Product> products = []
+        HttpURLConnection conn = getChargifyConnection(productsUrl, GET)
+        conn.connect()
+        int responseCode = conn.getResponseCode()
+        log.debug("Gettings products from chargify : response code : ${responseCode}")
+        if (responseCode == HTTP_RESPONSE_CODE_OK) {
+            products = Product.getListFromXml(conn.content?.text)
+            log.debug("number of products retrieved: ${products.size()}")
+        }
+        conn.disconnect()
+        return products
+    }
+
     public Customer createCustomerInChargify(Customer customer) {
         Customer retCustomer = null
         if (customer.isValid()) {
-            HttpURLConnection conn = getChargifyConnection(customersUrl, "POST")
+            HttpURLConnection conn = getChargifyConnection(customersUrl, POST)
             String customerRequestXml = customer.getXml()
             def writer = new OutputStreamWriter(conn.outputStream)
             writer.write(customerRequestXml)
@@ -51,42 +69,10 @@ class ChargifyService {
         return retCustomer
     }
 
-    List<Product> getProductsFromChargify() {
-        List<Product> products = []
-        HttpURLConnection conn = getChargifyConnection(productsUrl, "GET")
-        conn.connect()
-        int responseCode = conn.getResponseCode()
-        log.debug("Gettings products from chargify : response code : ${responseCode}")
-        if (responseCode == HTTP_RESPONSE_CODE_OK) {
-            products = Product.getListFromXml(conn.content?.text)
-            log.debug("number of products retrieved: ${products.size()}")
-        }
-        conn.disconnect()
-        return products
-    }
-
-    public List<Transaction> getChargifyTransactions(String subscriptionId) {
-        List<Transaction> transactions = []
-        if (subscriptionId) {
-            String urlStr = "${transactionsUrl}/${subscriptionId}/transactions.json"//"https://makeitrain.chargify.com/subscriptions/${subscriptionId}/transactions.json"
-            HttpURLConnection conn = getChargifyConnection(urlStr, "GET")
-            conn.connect()
-            int responseCode = conn.getResponseCode()
-            log.debug("response code : ${responseCode}")
-            if (responseCode == HTTP_RESPONSE_CODE_OK) {
-              String jsonResponse = conn.content?.text
-              transactions << Transaction.getTransactionsFromJson(jsonResponse)
-              log.debug("Getting transaction from chargify for Subscription id :${subscriptionId} ")
-            }
-            conn.disconnect()
-        }
-        return transactions?.flatten()
-    }
-
     public String createSubscription(Subscription subscription)  {
         String subscriptionId = null
         
-        HttpURLConnection conn = getChargifyConnection(subscriptionsUrl, "POST")
+        HttpURLConnection conn = getChargifyConnection(subscriptionsUrl, POST)
         String subscriptionRequestXml = subscription.getXml()
         def writer = new OutputStreamWriter(conn.outputStream)
         writer.write(subscriptionRequestXml)
@@ -116,7 +102,7 @@ class ChargifyService {
         Subscription subscription = null
         String urlStr = subscriptionsUrl
         urlStr = urlStr.replaceFirst(".xml", "/${subscriptionId}.xml")
-        HttpURLConnection conn = getChargifyConnection(urlStr, "GET")
+        HttpURLConnection conn = getChargifyConnection(urlStr, GET)
         conn.connect()
         int responseCode = conn.getResponseCode()
         log.debug("response code : ${responseCode}")
@@ -129,10 +115,53 @@ class ChargifyService {
         return subscription
     }
 
+    public Subscription cancelSubscription(String subscriptionId, String message) {
+        String urlStr = subscriptionsUrl
+        urlStr = urlStr.replaceFirst(".xml", "/${subscriptionId}.xml")
+        HttpURLConnection conn = getChargifyConnection(urlStr, DELETE)
+        Subscription subscription = new Subscription(action: Subscription.UNSUBSCRIBE, customMessage: message)
+        String subscriptionRequestXml = subscription.getXml()
+        def writer = new OutputStreamWriter(conn.outputStream)
+        writer.write(subscriptionRequestXml)
+        writer.flush()
+        writer.close()
+        conn.connect()
+
+        int responseCode = conn.getResponseCode()
+        log.debug("Cancel Subscription: response code : ${responseCode}")
+        if (responseCode == HTTP_RESPONSE_CODE_OK) {
+            String responseXml = conn.content?.text
+            subscription = Subscription.getFromXml(responseXml)
+            log.debug("Cancel Subscription: subscription: ${subscription}")
+        } else {
+            subscription = null
+        }
+        conn.disconnect()
+        return subscription
+    }
+
+    public List<Transaction> getChargifyTransactions(String subscriptionId) {
+        List<Transaction> transactions = []
+        if (subscriptionId) {
+            String urlStr = "${transactionsUrl}/${subscriptionId}/transactions.json"
+            HttpURLConnection conn = getChargifyConnection(urlStr, GET)
+            conn.connect()
+            int responseCode = conn.getResponseCode()
+            log.debug("response code : ${responseCode}")
+            if (responseCode == HTTP_RESPONSE_CODE_OK) {
+              String jsonData = conn.content?.text
+              transactions << Transaction.getTransactionsFromJson(jsonData)
+              log.debug("Getting transaction from chargify for Subscription id :${subscriptionId} ")
+            }
+            conn.disconnect()
+        }
+        return transactions?.flatten()
+    }
+
     public Subscription updateCreditCard(Subscription subscription) {
         String urlStr = subscriptionsUrl
         urlStr = urlStr.replaceFirst(".xml", "/${subscription.id}.xml")
-        HttpURLConnection conn = getChargifyConnection(urlStr, "PUT")
+        HttpURLConnection conn = getChargifyConnection(urlStr, PUT)
         String subscriptionRequestXml = subscription.getXml()
         log.debug "xml request: ${subscriptionRequestXml}"
         def writer = new OutputStreamWriter(conn.outputStream)
@@ -157,28 +186,4 @@ class ChargifyService {
         return subscription
     }
 
-    public Subscription cancelSubscription(String subscriptionId, String message) {
-        String urlStr = subscriptionsUrl
-        urlStr = urlStr.replaceFirst(".xml", "/${subscriptionId}.xml")
-        HttpURLConnection conn = getChargifyConnection(urlStr, "DELETE")
-        Subscription subscription = new Subscription(action: Subscription.UNSUBSCRIBE, customMessage: message)
-        String subscriptionRequestXml = subscription.getXml()
-        def writer = new OutputStreamWriter(conn.outputStream)
-        writer.write(subscriptionRequestXml)
-        writer.flush()
-        writer.close()
-        conn.connect()
-
-        int responseCode = conn.getResponseCode()
-        log.debug("Cancel Subscription: response code : ${responseCode}")
-        if (responseCode == HTTP_RESPONSE_CODE_OK) {
-            String responseXml = conn.content?.text
-            subscription = Subscription.getFromXml(responseXml)
-            log.debug("Cancel Subscription: subscription: ${subscription}")
-        } else {
-            subscription = null
-        }
-        conn.disconnect()
-        return subscription
-    }
 }

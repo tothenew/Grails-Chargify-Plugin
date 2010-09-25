@@ -23,9 +23,9 @@ class Subscription {
     Date nextChangeDate //<next_assessment_at type="datetime">2010-07-23T08:27:38-04:00</next_assessment_at>
 
     // product specific fields.
-    String productHandle //<product><handle>make-it-rain-pay-as-you-go</handle></product>
-    String productName  //<product><name>make-it-rain-pay-as-you-go</handle></name>
-    String productInfo // <product><description>20 Raindrops Included Additional Raindrops $0.50 each</description></product>
+    String productHandle //<product><handle>pay-as-you-go</handle></product>
+    String productName  //<product><name>pay-as-you-go</handle></name>
+    String productInfo // <product><description>20 Points Included Additional point $0.50 each</description></product>
     String productPrice //$0.00 every 1 month - <product><price_in_cents type="integer">0</price_in_cents><interval type="integer">1</interval><interval_unit>month</interval_unit></product>
 
     // Credit Card specific fields.
@@ -37,15 +37,6 @@ class Subscription {
     String ccFirstName  // <credit_card><first_name>Salil</first_name></credit_card>
     String ccLastName   // <credit_card><last_name>Kalia</last_name></credit_card>
     String zipCode
-
-    /*
-    <billing_address nil="true"></billing_address>
-    <billing_address_2 nil="true"></billing_address_2>
-    <billing_city nil="true"></billing_city>
-    <billing_country nil="true"></billing_country>
-    <billing_state nil="true"></billing_state>
-    <billing_zip nil="true"></billing_zip>
-     */
 
     String notes
     String options
