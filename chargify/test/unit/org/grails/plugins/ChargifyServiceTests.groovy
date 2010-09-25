@@ -21,7 +21,7 @@ class ChargifyServiceTests extends GrailsUnitTestCase {
         chargifyService = new ChargifyService();
 
         customer=getDummyCustomer();
-        customer=chargifyService.createCustomerInChargify(customer);
+        customer=chargifyService.createCustomer(customer);
         subscription=getDummySubscription();
         subscriptionId=chargifyService.createSubscription(subscription);
     }
@@ -41,14 +41,14 @@ class ChargifyServiceTests extends GrailsUnitTestCase {
     void testGetSubscriptionByIdFromChargify(){
         Subscription existingSubscription;
         //Get Existing Subscription
-        existingSubscription = chargifyService.getSubscriptionByIdFromChargify(subscriptionId)
+        existingSubscription = chargifyService.getSubscriptionById(subscriptionId)
         assertEquals("Subscription not created or fetched property from Chargify.",planProductHandle, existingSubscription.productHandle)
         assertNotNull(existingSubscription.id)
         assertEquals(customer.referenceId, existingSubscription.customerRef)
     }
 
     void testGetChargifyTransactions(){
-        List<Transaction> transactions=chargifyService.getChargifyTransactions(subscriptionId)
+        List<Transaction> transactions=chargifyService.getTransactionsBySubscriptionId(subscriptionId)
         assertNotNull("Unable to get transactions",transactions);
         transactions.each{
             assertEquals("Transaction not found for specified subscripiton",subscriptionId,it.subscriptionId)

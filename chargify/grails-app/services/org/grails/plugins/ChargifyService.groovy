@@ -30,7 +30,7 @@ class ChargifyService {
         return conn
     }
 
-    List<Product> getProductsFromChargify() {
+    List<Product> getProducts() {
         List<Product> products = []
         HttpURLConnection conn = getChargifyConnection(productsUrl, GET)
         conn.connect()
@@ -44,7 +44,7 @@ class ChargifyService {
         return products
     }
 
-    public Customer createCustomerInChargify(Customer customer) {
+    public Customer createCustomer(Customer customer) {
         Customer retCustomer = null
         if (customer.isValid()) {
             HttpURLConnection conn = getChargifyConnection(customersUrl, POST)
@@ -98,7 +98,7 @@ class ChargifyService {
         return subscriptionId
     }
 
-    public Subscription getSubscriptionByIdFromChargify(String subscriptionId) {
+    public Subscription getSubscriptionById(String subscriptionId) {
         Subscription subscription = null
         String urlStr = subscriptionsUrl
         urlStr = urlStr.replaceFirst(".xml", "/${subscriptionId}.xml")
@@ -140,7 +140,7 @@ class ChargifyService {
         return subscription
     }
 
-    public List<Transaction> getChargifyTransactions(String subscriptionId) {
+    public List<Transaction> getTransactionsBySubscriptionId(String subscriptionId) {
         List<Transaction> transactions = []
         if (subscriptionId) {
             String urlStr = "${transactionsUrl}/${subscriptionId}/transactions.json"
