@@ -2,7 +2,6 @@ package org.grails.plugins.chargify;
 
 import org.codehaus.groovy.grails.commons.ConfigurationHolder as CH
 import groovy.xml.MarkupBuilder
-import org.codehaus.groovy.grails.commons.ConfigurationHolder
 
 class ChargifyService {
 

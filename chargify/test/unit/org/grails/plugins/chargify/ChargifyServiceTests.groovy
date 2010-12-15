@@ -32,17 +32,14 @@ class ChargifyServiceTests extends GrailsUnitTestCase {
     }
 
     void testCreateCustomerInChargify() {
-        println 'in testCreateCustomerInChargify'
         assertNotNull("Customer could not be created in Chargify", customer)
     }
 
     void testCreateSubscription() {
-        println 'in testCreateSubscription'
         assertNotNull("Subscription could not be created in Chargify", subscriptionId)
     }
 
     void testGetSubscriptionByIdFromChargify() {
-        println 'in testGetSubscriptionByIdFromChargify'
         Subscription existingSubscription;
         //Get Existing Subscription
         existingSubscription = chargifyService.getSubscriptionById(subscriptionId)
@@ -52,7 +49,6 @@ class ChargifyServiceTests extends GrailsUnitTestCase {
     }
 
     void testGetChargifyTransactions() {
-        println 'in testGetChargifyTransactions'
         List<Transaction> transactions = chargifyService.getTransactionsBySubscriptionId(subscriptionId)
         assertNotNull("Unable to get transactions", transactions);
         transactions.each {
@@ -61,7 +57,6 @@ class ChargifyServiceTests extends GrailsUnitTestCase {
     }
 
     void testUpdateCreditCard() {
-        println 'in testUpdateCreditCard'
         String zipcode = "12238";
         subscription.id = subscriptionId
         subscription.zipCode = zipcode;
@@ -71,7 +66,6 @@ class ChargifyServiceTests extends GrailsUnitTestCase {
     }
 
     void testCancelSubscription() {
-        println 'in testCancelSubscription'
         Subscription cancelledSubscription = chargifyService.cancelSubscription(subscriptionId, "Cancel my subscription");
         assertEquals("Unable to cancel subscription in Chargify", "canceled", cancelledSubscription.status);
     }
@@ -79,7 +73,6 @@ class ChargifyServiceTests extends GrailsUnitTestCase {
     void testCreateMeteredUsage(){
         if(meteredComponentId){
             String usageId = chargifyService.createMeteredUsage(subscriptionId, meteredComponentId, 2, "My test metered Usage ${System.currentTimeMillis()}")
-            println "usageID: ${usageId}"
             assertNotNull("Problem in creating Metered Component Usage.", usageId)
         }
     }
