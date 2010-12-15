@@ -22,7 +22,7 @@ class ChargifyServiceTests extends GrailsUnitTestCase {
         chargifyService = new ChargifyService();
 
         customer = getDummyCustomer();
-        customer = chargifyService.createCustomer(customer);
+        customer = chargifyService.createCustomer(customer).entity;
         subscription = getDummySubscription();
         subscriptionId = chargifyService.createSubscription(subscription);
     }
@@ -42,14 +42,14 @@ class ChargifyServiceTests extends GrailsUnitTestCase {
     void testGetSubscriptionByIdFromChargify() {
         Subscription existingSubscription;
         //Get Existing Subscription
-        existingSubscription = chargifyService.getSubscriptionById(subscriptionId)
+        existingSubscription = chargifyService.getSubscriptionById(subscriptionId).entity
         assertEquals("Subscription not created or fetched property from Chargify.", planProductHandle, existingSubscription.productHandle)
         assertNotNull(existingSubscription.id)
         assertEquals(customer.referenceId, existingSubscription.customerRef)
     }
 
     void testGetChargifyTransactions() {
-        List<Transaction> transactions = chargifyService.getTransactionsBySubscriptionId(subscriptionId)
+        List<Transaction> transactions = chargifyService.getTransactionsBySubscriptionId(subscriptionId).entity
         assertNotNull("Unable to get transactions", transactions);
         transactions.each {
             assertEquals("Transaction not found for specified subscripiton", subscriptionId, it.subscriptionId)
@@ -60,13 +60,13 @@ class ChargifyServiceTests extends GrailsUnitTestCase {
         String zipcode = "12238";
         subscription.id = subscriptionId
         subscription.zipCode = zipcode;
-        Subscription updatedSubscription = chargifyService.updateCreditCard(subscription);
+        Subscription updatedSubscription = chargifyService.updateCreditCard(subscription).entity;
         assertNotNull("Credit Card could not be updated in Chargify", updatedSubscription);
         assertEquals("Subscription not updated or fetch property from chargify", zipcode, updatedSubscription.zipCode)
     }
 
     void testCancelSubscription() {
-        Subscription cancelledSubscription = chargifyService.cancelSubscription(subscriptionId, "Cancel my subscription");
+        Subscription cancelledSubscription = chargifyService.cancelSubscription(subscriptionId, "Cancel my subscription").entity;
         assertEquals("Unable to cancel subscription in Chargify", "canceled", cancelledSubscription.status);
     }
 

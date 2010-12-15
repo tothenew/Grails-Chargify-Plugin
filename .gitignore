@@ -1,0 +1,31 @@
+
+# /
+/cobertura.ser
+/s3-plugin-temp
+*.log
+/.idea
+/target
+/*.ipr
+/out
+/*.iml
+
+
+/chargify/cobertura.ser
+/chargify/s3-plugin-temp
+/chargify/*.log
+/chargify/.idea
+/chargify/target
+/chargify/*.ipr
+/chargify/out
+/chargify/*.iml
+
+# /web-app/
+/chargify/web-app/plugins
+
+# /web-app/WEB-INF/
+/chargify/web-app/WEB-INF/tld/*.tld
+
+/chargify/web-app/WEB-INF/grails.xml
+
+# local config overrides
+
