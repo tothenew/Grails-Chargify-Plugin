@@ -1,4 +1,4 @@
-package org.grails.plugins
+package org.grails.plugins.chargify;
 
 
 import grails.converters.JSON

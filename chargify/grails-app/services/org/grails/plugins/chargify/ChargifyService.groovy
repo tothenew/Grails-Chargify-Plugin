@@ -1,6 +1,8 @@
-package org.grails.plugins
+package org.grails.plugins.chargify;
 
 import org.codehaus.groovy.grails.commons.ConfigurationHolder as CH
+import groovy.xml.MarkupBuilder
+import org.codehaus.groovy.grails.commons.ConfigurationHolder
 
 class ChargifyService {
 
@@ -185,5 +187,52 @@ class ChargifyService {
         conn.disconnect()
         return subscription
     }
+
+    public String createMeteredUsage(String subscriptionId, Component component, Integer amount, String memo){
+        return createMeteredUsage(subscriptionId, component.id, amount, memo)
+    }
+
+    public String createMeteredUsage(String subscriptionId, String componentId, Integer amount, String memo) {
+        String usageId = null
+        String urlStr = "${transactionsUrl}/${subscriptionId}/components/${componentId}/usages.xml"
+        HttpURLConnection conn = getChargifyConnection(urlStr, POST)
+
+        String usageXml = getUsageXml(amount, memo)
+        log.debug "xml request: ${usageXml}"
+        
+        int responseCode = processChargifyRequest(conn, usageXml)
+        log.debug("createMeteredUsage response code: ${responseCode}")
+
+        if (responseCode == HTTP_RESPONSE_CODE_OK) {
+            usageId = getUsageIdFromXmlResponse(conn.content?.text)
+        }
+        conn.disconnect()
+        return usageId
+    }
+
+    int processChargifyRequest(HttpURLConnection connection, String requestContent){
+        def writer = new OutputStreamWriter(connection.outputStream)
+        writer.write(requestContent)
+        writer.flush()
+        writer.close()
+        connection.connect()
+        return connection.getResponseCode()
+    }
+
+    String getUsageXml(Integer amount, String memoNote){
+        StringWriter xmlWriter = new StringWriter()
+        MarkupBuilder xmlBuilder = new MarkupBuilder(xmlWriter)
+        xmlBuilder.usage() {
+            quantity(amount)
+            memo(memoNote)
+        }
+        return xmlWriter.toString()
+    }
+
+    String getUsageIdFromXmlResponse(xmlResponse){
+        def usage = new XmlParser().parseText(xmlResponse);
+        return usage.id?.text();
+    }
+
 
 }
