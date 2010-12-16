@@ -206,6 +206,45 @@ class ChargifyService {
         return response
     }
 
+    public Response<Subscription> changeSubscription(Subscription subscription)  {
+        String urlStr = subscriptionsUrl
+        Response<Subscription> response = new Response<Subscription>()
+        urlStr = urlStr.replaceFirst(".xml", "/${subscription.id}.xml")
+        HttpURLConnection conn = getChargifyConnection(urlStr, "PUT")
+        String subscriptionRequestXml = subscription.getXml()
+
+
+        def writer = new OutputStreamWriter(conn.outputStream)
+        writer.write(subscriptionRequestXml)
+        writer.flush()
+        writer.close()
+        conn.connect()
+
+        int responseCode = conn.getResponseCode()
+        response.status = responseCode
+        log.debug("updateSubscription: response code : ${responseCode}")
+        if (responseCode == HTTP_RESPONSE_CODE_OK) {
+            String responseXml = conn.content?.text
+            subscription = Subscription.getFromXml(responseXml)
+            response.entity = subscription
+            response.message = "Success"
+            log.debug("updateSubscription: subscription: ${subscription}")
+        } else {
+            subscription = null
+            String responseMessage = conn.getResponseMessage()
+            // this response code should be 422 - unprocessable information.
+            BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
+            log.error("${RainmakerUtil.logMessagePrefix}downgradeSubscriptionOrUpdateCreditCard: Transaction failed. resposneCode: ${responseCode}. Error message is : ${responseMessage}. Error body is : ${bufferedReader.text}")
+            def err = new XmlSlurper().parse(conn.getErrorStream())
+            log.error("Errors : ${err}")
+            response.message = err
+            conn.disconnect()
+         }
+        conn.disconnect()
+        return response
+    }
+
+
     public Response<Subscription> updateCreditCard(Subscription subscription) {
         String urlStr = subscriptionsUrl
         Response<Subscription> response = new Response<Subscription>()
@@ -259,7 +298,7 @@ class ChargifyService {
     }
 
     public Response<String> createMeteredUsage(String subscriptionId, String componentId, Integer amount, String memo) {
-        String usageId = null
+        String usageId = null                            
         Response<String> response = new Response<String>()
         String urlStr = "${transactionsUrl}/${subscriptionId}/components/${componentId}/usages.xml"
         HttpURLConnection conn = getChargifyConnection(urlStr, POST)
