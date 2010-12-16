@@ -212,14 +212,11 @@ class ChargifyService {
         urlStr = urlStr.replaceFirst(".xml", "/${subscription.id}.xml")
         HttpURLConnection conn = getChargifyConnection(urlStr, "PUT")
         String subscriptionRequestXml = subscription.getXml()
-
-
         def writer = new OutputStreamWriter(conn.outputStream)
         writer.write(subscriptionRequestXml)
         writer.flush()
         writer.close()
         conn.connect()
-
         int responseCode = conn.getResponseCode()
         response.status = responseCode
         log.debug("updateSubscription: response code : ${responseCode}")
@@ -234,7 +231,7 @@ class ChargifyService {
             String responseMessage = conn.getResponseMessage()
             // this response code should be 422 - unprocessable information.
             BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(conn.getErrorStream()));
-            log.error("${RainmakerUtil.logMessagePrefix}downgradeSubscriptionOrUpdateCreditCard: Transaction failed. resposneCode: ${responseCode}. Error message is : ${responseMessage}. Error body is : ${bufferedReader.text}")
+            log.error("changeSubscription: Transaction failed. responseCode: ${responseCode}. Error message is : ${responseMessage}. Error body is : ${bufferedReader.text}")
             def err = new XmlSlurper().parse(conn.getErrorStream())
             log.error("Errors : ${err}")
             response.message = err
@@ -297,21 +294,21 @@ class ChargifyService {
         return createMeteredUsage(subscriptionId, component.id, amount, memo)
     }
 
+
+
     public Response<String> createMeteredUsage(String subscriptionId, String componentId, Integer amount, String memo) {
-        String usageId = null                            
         Response<String> response = new Response<String>()
         String urlStr = "${transactionsUrl}/${subscriptionId}/components/${componentId}/usages.xml"
         HttpURLConnection conn = getChargifyConnection(urlStr, POST)
-
-        String usageXml = getUsageXml(amount, memo)
+        MeteredUsage meteredUsage = new MeteredUsage(memo: memo, quantity:amount)
+        String usageXml = meteredUsage.getXml()
         log.debug "xml request: ${usageXml}"
-        
         int responseCode = processChargifyRequest(conn, usageXml)
         response.status = responseCode
         log.debug("createMeteredUsage response code: ${responseCode}")
 
         if (responseCode == HTTP_RESPONSE_CODE_OK) {
-            usageId = getUsageIdFromXmlResponse(conn.content?.text)
+            def usageId = meteredUsage.getUsageIdFromXmlResponse(conn.content?.text)
             response.entity = usageId
             response.message = "Success"
         }else
@@ -324,6 +321,28 @@ class ChargifyService {
         return response
     }
 
+    public Response<List<MeteredUsage>> getMeteredUsage(String subscriptionId, String componentId) {
+           Response<List<MeteredUsage>> response = new Response<List<MeteredUsage>>()
+           String urlStr = "${transactionsUrl}/${subscriptionId}/components/${componentId}/usages.xml"
+           HttpURLConnection conn = getChargifyConnection(urlStr, GET)
+           conn.connect()
+           int responseCode = conn.getResponseCode()
+           response.status = responseCode
+           log.debug("getMeteredUsage response code: ${responseCode}")
+           if (responseCode == HTTP_RESPONSE_CODE_OK) {
+               response.entity = MeteredUsage.getMeteredUsagesFromXml(conn.content?.text)
+               response.message = "Success"
+           }else
+           {
+               def err = new XmlSlurper().parse(conn.getErrorStream())
+               log.error("Errors : ${err}")
+               response.message = err
+           }
+           conn.disconnect()
+           return response
+       }
+
+
     int processChargifyRequest(HttpURLConnection connection, String requestContent){
         def writer = new OutputStreamWriter(connection.outputStream)
         writer.write(requestContent)
@@ -333,20 +352,6 @@ class ChargifyService {
         return connection.getResponseCode()
     }
 
-    String getUsageXml(Integer amount, String memoNote){
-        StringWriter xmlWriter = new StringWriter()
-        MarkupBuilder xmlBuilder = new MarkupBuilder(xmlWriter)
-        xmlBuilder.usage() {
-            quantity(amount)
-            memo(memoNote)
-        }
-        return xmlWriter.toString()
-    }
-
-    String getUsageIdFromXmlResponse(xmlResponse){
-        def usage = new XmlParser().parseText(xmlResponse);
-        return usage.id?.text();
-    }
-
+   
 
 }
