@@ -24,7 +24,7 @@ class ChargifyServiceTests extends GrailsUnitTestCase {
         customer = getDummyCustomer();
         customer = chargifyService.createCustomer(customer).entity;
         subscription = getDummySubscription();
-        subscriptionId = chargifyService.createSubscription(subscription);
+        subscriptionId = chargifyService.createSubscription(subscription).entity;
     }
 
     protected void tearDown() {
