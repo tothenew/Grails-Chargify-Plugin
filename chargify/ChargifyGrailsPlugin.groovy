@@ -1,6 +1,6 @@
 class ChargifyGrailsPlugin {
     // the plugin version
-    def version = "1.0"
+    def version = "2"
     // the version or versions of Grails the plugin is designed for
     def grailsVersion = "1.3.4 > *"
     // the other plugins this plugin depends on
@@ -12,7 +12,7 @@ class ChargifyGrailsPlugin {
 
     // TODO Fill in these fields
     def author = "Salil Kalia"
-    def authorEmail = "salil@intelligrape.com, anshul@intelligrape.com"
+    def authorEmail = "salil@intelligrape.com"
     def title = "Grails Chargify Plugin"
     def description = '''\\
 The plugin is created using grails 1.3.4 and provide your application the simplified intermediate service

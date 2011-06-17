@@ -8,18 +8,44 @@ class ChargifyService {
     public static final int CHARGIFY_RESPONSE_CODE_OK = 201;
     public static final int HTTP_RESPONSE_CODE_OK = 200;
 
-    public static final String customersUrl = "https://${CH.config.chargify.subdomain}.chargify.com/customers.xml"
-    public static final String customerLookupUrl = "https://${CH.config.chargify.subdomain}.chargify.com/customers/lookup.xml"
-    public static final String subscriptionsUrl = "https://${CH.config.chargify.subdomain}.chargify.com/subscriptions.xml"
-    public static final String transactionsUrl = "https://${ CH.config.chargify.subdomain}.chargify.com/subscriptions"
-    public static final String productsUrl = "https://${CH.config.chargify.subdomain}.chargify.com/products.xml"
-    public static final String authKey = CH.config.chargify.authkey + CH.config.chargify.authkeySuffix
     public static final String POST = "POST"
     public static final String GET = "GET"
     public static final String PUT = "PUT"
     public static final String DELETE = "DELETE"
 
+    //TODO: Urls should be set at one place (via method setSubDomain)
+    public String customersUrl = "https://${CH.config.chargify.subdomain}.chargify.com/customers.xml"
+    public String customerLookupUrl = "https://${CH.config.chargify.subdomain}.chargify.com/customers/lookup.xml"
+    public String subscriptionsUrl = "https://${CH.config.chargify.subdomain}.chargify.com/subscriptions.xml"
+    public String transactionsUrl = "https://${ CH.config.chargify.subdomain}.chargify.com/subscriptions"
+    public String productsUrl = "https://${CH.config.chargify.subdomain}.chargify.com/products.xml"
+    public String authKey = CH.config.chargify.authkey + CH.config.chargify.authkeySuffix
+
     boolean transactional = false
+
+    /**
+     * Change the subdomain used in the Chargify URLs.
+     * This is currently set by the chargify.subdomain config property.
+     *
+     * @param subdomain
+     */
+    void setSubDomain(String subdomain) {
+        customersUrl = "https://${subdomain}.chargify.com/customers.xml"
+        customerLookupUrl = "https://${subdomain}.chargify.com/customers/lookup.xml"
+        subscriptionsUrl = "https://${subdomain}.chargify.com/subscriptions.xml"
+        transactionsUrl = "https://${subdomain}.chargify.com/subscriptions"
+        productsUrl = "https://${subdomain}.chargify.com/products.xml"
+    }
+
+    /**
+     * Change the authkey used in the Chargify messages.
+     * This is currently set by the chargify.authkey config property.
+     *
+     * @param authkey
+     */
+    void setAuthKey(String authkey) {
+        authKey = authkey + CH.config.chargify.authkeySuffix
+    }
 
     private HttpURLConnection getChargifyConnection(String urlStr, String methodType) {
         URL url = new URL(urlStr)
@@ -352,6 +378,6 @@ class ChargifyService {
         return connection.getResponseCode()
     }
 
-   
+
 
 }
